@@ -5,12 +5,14 @@ from fastapi import FastAPI
 from mcp.server.transport_security import TransportSecuritySettings
 
 from training_mcp.config import Settings, get_settings
-from training_mcp.mcp.server import build_mcp_server
+from training_mcp.mcp.server import build_garmin_provider, build_mcp_server
+from training_mcp.providers.garmin import GarminProvider
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, garmin: GarminProvider | None = None) -> FastAPI:
     settings = settings or get_settings()
-    mcp = build_mcp_server(settings)
+    garmin = garmin or build_garmin_provider(settings)
+    mcp = build_mcp_server(settings, garmin)
     # Stateless Streamable HTTP (MCP 2026-07-28): no sessions, scales horizontally.
     mcp_app = mcp.streamable_http_app(
         stateless_http=True,
@@ -21,7 +23,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         async with mcp.session_manager.run():
-            yield
+            try:
+                yield
+            finally:
+                if garmin is not None:
+                    garmin.close()
 
     app = FastAPI(title="training-mcp", lifespan=lifespan)
 

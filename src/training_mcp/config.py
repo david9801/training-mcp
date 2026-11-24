@@ -1,6 +1,7 @@
 from functools import lru_cache
+from pathlib import Path
 
-from pydantic import AnyHttpUrl
+from pydantic import AliasChoices, AnyHttpUrl, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,6 +28,21 @@ class Settings(BaseSettings):
     allowed_hosts: list[str] = ["localhost:*", "127.0.0.1:*"]
 
     database_url: str = "postgresql+psycopg://training:training@localhost:5432/training"
+
+    # Garmin Connect Personal API key (own data only). Same variable name as Garmin's own CLI.
+    # When unset, the Garmin tools are not registered. Never commit it.
+    garmin_personal_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("GARMIN_PERSONAL_API_KEY", "TMCP_GARMIN_PERSONAL_API_KEY"),
+    )
+    # Where Garmin's client caches the bearer token (file mode 0600). Must be writable.
+    garmin_token_cache_file: Path = Path("~/.config/garmin/connect-personal-api-bearer-token.json")
+
+    @field_validator("garmin_personal_api_key", mode="before")
+    @classmethod
+    def _blank_key_is_unset(cls, v: object) -> object:
+        # `GARMIN_PERSONAL_API_KEY=` copied from .env.example means "not configured".
+        return None if isinstance(v, str) and not v.strip() else v
 
 
 @lru_cache

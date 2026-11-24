@@ -15,7 +15,7 @@ their own account, and every tool is gated by a scope.
 - **MCP 2026-07-28**, stateless Streamable HTTP: no sessions, scales horizontally.
 - **OAuth 2.1 resource server**: Protected Resource Metadata (RFC 9728), audience
   validation (RFC 8707), `401`/`403` challenges with `WWW-Authenticate`.
-- **Provider interface** for data sources: FIT upload today, vendor APIs later.
+- **Provider interface** for data sources: FIT upload, plus the Garmin Connect Personal API.
 
 ## Run locally
 
@@ -30,6 +30,20 @@ curl localhost:8000/.well-known/oauth-protected-resource/mcp
 
 `TMCP_DEV_TOKEN` is a static bearer token accepted only for local development, until JWT
 validation lands. Without it the server rejects every token.
+
+### Garmin Connect (optional)
+
+To query your own Garmin data, create a key in Garmin Connect under
+**Settings > Personal API Token** and set it in `.env` (never commit it):
+
+```bash
+GARMIN_PERSONAL_API_KEY=...
+```
+
+With the key set, the server exposes `garmin_list_activities`, `garmin_get_activity` and
+`garmin_daily_wellness` (sleep, HRV, body battery). Without it, those tools are hidden.
+The key only reads the key owner's data. See
+[ADR 0003](docs/adr/0003-garmin-personal-api.md).
 
 Try it with [MCP Inspector](https://github.com/modelcontextprotocol/inspector): connect to
 `http://localhost:8000/mcp` with header `Authorization: Bearer <TMCP_DEV_TOKEN>`.
@@ -50,7 +64,7 @@ src/training_mcp/
   config.py      settings from TMCP_* environment variables
   auth/          token verification
   mcp/           MCP server and tools
-  providers/     data source adapters (FIT files, later vendor APIs)
+  providers/     data source adapters (FIT files, Garmin Personal API)
   ingestion/     FIT parsing
   db/            persistence
 docs/adr/        architecture decision records
@@ -60,6 +74,7 @@ docs/adr/        architecture decision records
 
 - [ADR 0001: Ingest FIT files instead of vendor APIs](docs/adr/0001-fit-files-instead-of-vendor-apis.md)
 - [ADR 0002: Target MCP specification 2026-07-28](docs/adr/0002-mcp-spec-revision.md)
+- [ADR 0003: Garmin Personal API with Garmin's official client](docs/adr/0003-garmin-personal-api.md)
 
 ## License
 
