@@ -42,7 +42,9 @@ GARMIN_PERSONAL_API_KEY=...
 
 With the key set, the server exposes `garmin_list_activities`, `garmin_get_activity` and
 `garmin_daily_wellness` (sleep, HRV, body battery). Without it, those tools are hidden.
-The key only reads the key owner's data. See
+To check them against your account without an MCP client, run
+`uv run python scripts/garmin_smoke.py` (full responses land in the gitignored
+`garmin-output/`). The key only reads the key owner's data. See
 [ADR 0003](docs/adr/0003-garmin-personal-api.md).
 
 Try it with [MCP Inspector](https://github.com/modelcontextprotocol/inspector): connect to
